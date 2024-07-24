@@ -59,7 +59,7 @@ func (h *Handler) handleCheckout(w http.ResponseWriter, r *http.Request) {
 	}
 	
 	// create new order and create every order items
-	orderID, totalPrice, err := h.createOrder(products, cart.Items, userID)
+	orderID, totalPrice, err := h.createOrder(products, cart, userID)
 	if err != nil {
 		utils.WriteError(w, http.StatusBadRequest, err)
 		return
