@@ -49,7 +49,7 @@ func (h *Handler) createOrder(products []types.Product, cart types.CartCheckoutP
 		UserID: userID,
 		Total: totalPrice,
 		Status: "pending", //todo
-		Address: cart.Address, //todo
+		Address: cart.Address,
 	})
 	if err != nil {
 		return 0, 0, err

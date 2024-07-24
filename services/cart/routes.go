@@ -23,6 +23,7 @@ func NewHandler(store types.OrderStore, productStore types.ProductStore, userSto
 
 func (h *Handler) RegisterRoutes(router *mux.Router)  {
 	router.HandleFunc("/cart/checkout", auth.WithJWTAuth(h.handleCheckout, h.userStore)).Methods(http.MethodPost)
+	router.HandleFunc("/order/cancel", auth.WithJWTAuth(h.handleCancellation, h.userStore)).Methods(http.MethodPost)
 }
 
 func (h *Handler) handleCheckout(w http.ResponseWriter, r *http.Request) {
@@ -67,5 +68,52 @@ func (h *Handler) handleCheckout(w http.ResponseWriter, r *http.Request) {
 	utils.WriteJSON(w, http.StatusOK, map[string]any{
 		"order_id": orderID,
 		"total_price": totalPrice,
+	})
+}
+
+func (h *Handler) handleCancellation(w http.ResponseWriter, r *http.Request) {
+	// update order status to cancel
+	var payload types.OrderCancelPayload
+	
+	// parse
+	if err := utils.ParseJSON(r, &payload); err != nil{
+		utils.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+	
+	// validate
+	if err := utils.Validate.Struct(payload); err != nil{
+		validationErrors := err.(validator.ValidationErrors)
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload %v", validationErrors))
+		return
+	}
+	
+	// receive orderID
+	// checks if orderID exists GetOrderByID
+	o, err := h.store.GetOrderByID(payload.OrderID)
+	if err != nil {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("failed to get order with id %v", payload.OrderID))
+		return
+	}
+	
+	// checks if userID on order match the userID on JWT token
+	userID := auth.GetUserIDFromContext(r.Context())
+	if userID != o.UserID{
+		utils.WriteError(w, http.StatusForbidden, fmt.Errorf("order does not belong to user %v", userID))
+		return
+	}
+
+	if o.Status != "pending"{
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("only pending order(s) can be cancelled"))
+		return
+	}
+	
+	// update order
+	o.Status = "cancelled"
+	h.store.UpdateOrder(*o)
+
+	utils.WriteJSON(w, http.StatusOK, map[string]any{
+		"order_id": o.ID,
+		"status": o.Status,
 	})
 }

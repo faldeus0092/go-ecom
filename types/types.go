@@ -61,6 +61,8 @@ type CreateProductPayload struct{
 type OrderStore interface{
 	CreateOrder(Order) (int, error)
 	CreateOrderItem(OrderItem) error
+	UpdateOrder(order Order) error
+	GetOrderByID(orderID int) (*Order, error)
 }
 
 type Order struct{
@@ -89,4 +91,8 @@ type CartItem struct{
 type CartCheckoutPayload struct{
 	Items []CartItem `json:"items" validate:"required"`
 	Address string `json:"address" validate:"required"`
+}
+
+type OrderCancelPayload struct{
+	OrderID int `json:"orderID" validate:"required"`
 }
