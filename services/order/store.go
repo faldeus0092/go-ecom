@@ -38,6 +38,22 @@ func (s *Store) UpdateOrder(order types.Order) error {
 	return err
 }
 
+func (s *Store) GetOrdersByUserID(userID int) ([]types.Order, error) {
+	rows, err := s.db.Query("SELECT * FROM orders WHERE userId = ?", userID)
+	if err != nil {
+		return nil, err
+	}
+	orders := make([]types.Order, 0)
+	for rows.Next(){
+		order, err := scanRowIntoOrder(rows)
+		if err != nil {
+			return nil, err
+		}
+		orders = append(orders, *order)
+	}
+	return orders, nil
+}
+
 func (s *Store) GetOrderByID(orderID int) (*types.Order, error){
 	rows, err := s.db.Query("SELECT * FROM orders WHERE id = ?", orderID)
 	if err != nil {

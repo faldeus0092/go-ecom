@@ -24,6 +24,7 @@ func NewHandler(store types.OrderStore, productStore types.ProductStore, userSto
 func (h *Handler) RegisterRoutes(router *mux.Router)  {
 	router.HandleFunc("/cart/checkout", auth.WithJWTAuth(h.handleCheckout, h.userStore)).Methods(http.MethodPost)
 	router.HandleFunc("/order/cancel", auth.WithJWTAuth(h.handleCancellation, h.userStore)).Methods(http.MethodPost)
+	router.HandleFunc("/order", auth.WithJWTAuth(h.handleGetOrders, h.userStore)).Methods(http.MethodGet)
 }
 
 func (h *Handler) handleCheckout(w http.ResponseWriter, r *http.Request) {
@@ -116,4 +117,15 @@ func (h *Handler) handleCancellation(w http.ResponseWriter, r *http.Request) {
 		"order_id": o.ID,
 		"status": o.Status,
 	})
+}
+
+func (h *Handler) handleGetOrders(w http.ResponseWriter, r *http.Request)  {
+	userID := auth.GetUserIDFromContext(r.Context())
+	products, err := h.store.GetOrdersByUserID(userID)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, products)
 }

@@ -63,6 +63,7 @@ type OrderStore interface{
 	CreateOrderItem(OrderItem) error
 	UpdateOrder(order Order) error
 	GetOrderByID(orderID int) (*Order, error)
+	GetOrdersByUserID(userID int) ([]Order, error)
 }
 
 type Order struct{
